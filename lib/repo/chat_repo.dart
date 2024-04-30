@@ -4,11 +4,11 @@ import '../global.dart';
 import '../models/chat_message_model.dart';
 
 class ChatRepo{
-  static chatTextGenerateRepo(List<ChatMessageModel> previousMessages) async {
+  static Future<String> chatTextGenerateRepo(List<ChatMessageModel> previousMessages) async {
     try{
       Dio dio = Dio();
 
-      final response = dio.post(
+      final response = await dio.post(
         API_URL,
         data: {
           "contents": previousMessages.map((e) => e.toMap()).toList(),
@@ -40,9 +40,13 @@ class ChatRepo{
         },
       );
       print(response.toString());
+      if(response.statusCode! >= 200 && response.statusCode! <= 300){
+        return response.data['candidates'].first['content']['parts'].first['text'];
+      }
+      return '';
     }catch(e){
       print(e.toString());
     }
-
+    return '';
   }
 }

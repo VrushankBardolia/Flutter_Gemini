@@ -10,11 +10,12 @@ part 'chat_event.dart';
 part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  ChatBloc() : super(ChatSuccessState(messages: [])) {
+  ChatBloc() : super(ChatSuccessState(messages: const [])) {
     on<GenerateNewTextMessageEvent>(_generateNewTextMessageEvent);
   }
 
   List<ChatMessageModel> messages = [];
+  bool generating = false;
 
   Future<void> _generateNewTextMessageEvent(GenerateNewTextMessageEvent event, Emitter<ChatState> emit) async {
     messages.add(ChatMessageModel(
@@ -22,6 +23,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       parts: [ChatPartModel(text: event.inputMessage)],
     ));
     emit(ChatSuccessState(messages: messages));
-    await ChatRepo.chatTextGenerateRepo(messages);
+    generating = true;
+    String generatedText = await ChatRepo.chatTextGenerateRepo(messages);
+    if(generatedText.isNotEmpty){
+      messages.add(ChatMessageModel(
+        role: 'model',
+        parts: [ChatPartModel(text: generatedText)],
+      ));
+    }
+    emit(ChatSuccessState(messages: messages));
+    generating = false;
   }
 }
