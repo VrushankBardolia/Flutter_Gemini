@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:remove_markdown/remove_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../bloc/chat_bloc.dart';
@@ -29,20 +28,6 @@ class _HomeState extends State<Home> {
       duration: const Duration(seconds: 1),
       curve: Curves.fastOutSlowIn,
     );
-  }
-
-  void copyResponse(String response){
-    Clipboard.setData(ClipboardData(text: response.removeMarkdown())).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Copied to your clipboard!')),
-      );
-    });
-  }
-
-  void clearConversation(List<ChatMessageModel> messages){
-    setState(() {
-      messages.clear();
-    });
   }
 
   @override
@@ -107,16 +92,20 @@ class _HomeState extends State<Home> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Image.asset('assets/gemini_icon.png',width: 40,),
-                                        MarkdownBody(data: msg.parts.first.text),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          children: [
-                                            IconButton(
-                                              onPressed: () => copyResponse(msg.parts.first.text),
-                                              iconSize: 20,
-                                              icon: const Icon(Icons.copy),
+                                        MarkdownBody(data: msg.parts.first.text,
+                                          selectable: true,
+                                          styleSheet: MarkdownStyleSheet(
+                                            h1: const TextStyle(fontWeight: FontWeight.w600,fontSize: 28),
+                                            code: GoogleFonts.ptMono(
+                                              textStyle : TextStyle(
+                                                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                                              ),
                                             ),
-                                          ],
+                                            codeblockDecoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(8),
+                                              color: Theme.of(context).colorScheme.surfaceVariant,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -125,8 +114,8 @@ class _HomeState extends State<Home> {
                               return SizedBox(
                                 height: 100,
                                 child: Shimmer.fromColors(
-                                  baseColor: const Color(0xff836DC3),
-                                  highlightColor: const Color(0xff1AA0E2),
+                                  baseColor: const Color(0xff6FB2FE),
+                                  highlightColor: const Color(0xff2780FE),
                                   child: const Center(
                                     child: Text('Generating...',
                                       style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.w600, fontSize: 20),
@@ -202,10 +191,10 @@ class _HomeState extends State<Home> {
               ),
               const SizedBox(width: 12),
               FloatingActionButton(
-                onPressed: (){
+                onPressed: () {
                   if(msgController.text.isNotEmpty){
                     chatBloc.add(GenerateNewTextMessageEvent(inputMessage: msgController.text));
-                    msgController.clear;
+                    msgController.clear();
                     FocusScope.of(context).unfocus();
                   }
                   scrollToBottom();
