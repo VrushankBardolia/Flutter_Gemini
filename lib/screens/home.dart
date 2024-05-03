@@ -1,10 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:remove_markdown/remove_markdown.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../bloc/chat_bloc.dart';
 import '../models/chat_message_model.dart';
+import 'setting.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,14 +22,27 @@ class _HomeState extends State<Home> {
   final ChatBloc chatBloc = ChatBloc();
   final msgController = TextEditingController();
   final scrollController = ScrollController();
-  late AnimationController rotationController;
 
   void scrollToBottom() {
     scrollController.animateTo(
       scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
+      duration: const Duration(seconds: 1),
+      curve: Curves.fastOutSlowIn,
     );
+  }
+
+  void copyResponse(String response){
+    Clipboard.setData(ClipboardData(text: response.removeMarkdown())).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Copied to your clipboard!')),
+      );
+    });
+  }
+
+  void clearConversation(List<ChatMessageModel> messages){
+    setState(() {
+      messages.clear();
+    });
   }
 
   @override
@@ -36,6 +53,12 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: Image.asset('assets/gemini_logo.png', width: 100),
         scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=>const Setting())),
+            icon: const Icon(Icons.settings),
+          ),
+        ],
       ),
 
       /// Body
@@ -48,63 +71,102 @@ class _HomeState extends State<Home> {
             /// Success State
             case const (ChatSuccessState):
               List<ChatMessageModel> messages = (state as ChatSuccessState).messages;
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(8,8,8,0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.separated(
-                        controller: scrollController,
-                        shrinkWrap: true,
-                        // primary: false,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: messages.length,
-                        separatorBuilder: (context,index) => const SizedBox(height: 8),
-                        itemBuilder: (context,index){
-                          final msg = messages[index];
-                          return Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: msg.role == 'user'
-                                  ? Theme.of(context).colorScheme.surfaceVariant
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: msg.role == 'user'
-                                ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text('ME',style: TextStyle(fontWeight: FontWeight.w600)),
-                                      Text(msg.parts.first.text, style: const TextStyle(fontSize: 16)),
-                                    ],
-                                  )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Image.asset('assets/gemini_icon.png',width: 40,),
-                                      MarkdownBody(data: msg.parts.first.text)
-                                    ],
+              if(messages.isNotEmpty){
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(8,0,8,0),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          shrinkWrap: true,
+                          physics: const ClampingScrollPhysics(),
+                          // itemCount: messages.length,
+                          itemCount: messages.length + (chatBloc.generating ? 1 : 0), // Add 1 for Shimmer if generating
+                          separatorBuilder: (context,index) => const SizedBox(height: 8),
+                          itemBuilder: (context,index){
+                            if (index < messages.length) {
+                              final msg = messages[index];
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: msg.role == 'user'
+                                      ? Theme.of(context).colorScheme.surfaceVariant
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: msg.role == 'user'
+                                    ? Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text('ME',style: TextStyle(fontWeight: FontWeight.w600)),
+                                          Text(msg.parts.first.text, style: const TextStyle(fontSize: 16)),
+                                        ],
+                                      )
+                                    : Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Image.asset('assets/gemini_icon.png',width: 40,),
+                                        MarkdownBody(data: msg.parts.first.text),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          children: [
+                                            IconButton(
+                                              onPressed: () => copyResponse(msg.parts.first.text),
+                                              iconSize: 20,
+                                              icon: const Icon(Icons.copy),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                              );
+                            } else {
+                              return SizedBox(
+                                height: 100,
+                                child: Shimmer.fromColors(
+                                  baseColor: const Color(0xff836DC3),
+                                  highlightColor: const Color(0xff1AA0E2),
+                                  child: const Center(
+                                    child: Text('Generating...',
+                                      style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.w600, fontSize: 20),
+                                    ),
                                   ),
-
-                          );
-                        },
-                      ),
-                    ),
-                    if(chatBloc.generating)
-                      SizedBox(
-                        height: 100,
-                        width: 100,
-                        child: AnimatedRotation(
-                          turns: 1000,
-                          duration: const Duration(milliseconds: 300),
-                          child: Image.asset('assets/gemini_icon.png',width: 40,),
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ),
-                  ],
+                    ],
+                  ),
+                );
+              }
+
+              /// If there is no chat
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primaryContainer.withOpacity(0.75),
+                      Theme.of(context).colorScheme.background,
+                    ],
+                  )
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text('Start Conversation with ',
+                        style: TextStyle(fontSize: 22, height:1),),
+                      Image.asset('assets/gemini_logo.png', height: 28,),
+                    ],
+                  ),
                 ),
               );
             default:
-              return const SizedBox();
+              return Container();
           }
         }
       ),
@@ -143,16 +205,14 @@ class _HomeState extends State<Home> {
                 onPressed: (){
                   if(msgController.text.isNotEmpty){
                     chatBloc.add(GenerateNewTextMessageEvent(inputMessage: msgController.text));
-                    msgController.clear();
+                    msgController.clear;
                     FocusScope.of(context).unfocus();
                   }
-                  // WidgetsBinding.instance.addPostFrameCallback((_) {
-                  //   scrollController.jumpTo(scrollController.position.maxScrollExtent);
-                  // });
                   scrollToBottom();
                 },
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 0,
+                focusElevation: 0,
                 child: Icon(
                   CupertinoIcons.arrow_turn_up_right,
                   color: Theme.of(context).colorScheme.onPrimary,

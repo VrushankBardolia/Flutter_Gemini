@@ -7,7 +7,6 @@ class ChatRepo{
   static Future<String> chatTextGenerateRepo(List<ChatMessageModel> previousMessages) async {
     try{
       Dio dio = Dio();
-
       final response = await dio.post(
         API_URL,
         data: {
