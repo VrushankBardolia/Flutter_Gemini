@@ -111,34 +111,31 @@ class _HomeState extends State<Home> {
                                         ],
                                       )
                                     : Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Image.asset('assets/gemini_icon.png',width: 40,),
-                                        const SizedBox(height: 8),
-                                        MarkdownBody(data: msg.parts.first.text,
-                                          selectable: true,
-                                          styleSheet: MarkdownStyleSheet(
-                                            h1: const TextStyle(fontWeight: FontWeight.w700,fontSize: 28),
-                                            h2: const TextStyle(fontWeight: FontWeight.w700,fontSize: 24),
-                                            h3: const TextStyle(fontWeight: FontWeight.w700,fontSize: 20),
-                                            p: const TextStyle(fontSize: 16),
-                                            listIndent: 12,
-                                            code: GoogleFonts.ptMono(
-                                              textStyle : TextStyle(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Image.asset('assets/gemini_icon.png',width: 40,),
+                                          const SizedBox(height: 8),
+                                          MarkdownBody(data: msg.parts.first.text,
+                                            selectable: true,
+                                            styleSheet: MarkdownStyleSheet(
+                                              h1: const TextStyle(fontWeight: FontWeight.w700,fontSize: 28),
+                                              h2: const TextStyle(fontWeight: FontWeight.w700,fontSize: 24),
+                                              h3: const TextStyle(fontWeight: FontWeight.w700,fontSize: 20),
+                                              p: const TextStyle(fontSize: 16),
+                                              listIndent: 12,
+                                              code: GoogleFonts.ptMono(
                                                 fontSize: 14,
                                                 color: Theme.of(context).colorScheme.onSecondaryContainer,
                                                 backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                                               ),
-                                            ),
-
-                                            codeblockDecoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(8),
-                                              color: Theme.of(context).colorScheme.secondaryContainer,
+                                              codeblockDecoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(8),
+                                                color: Theme.of(context).colorScheme.secondaryContainer,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                        ],
+                                      ),
                               );
                             } else {
                               return SizedBox(
