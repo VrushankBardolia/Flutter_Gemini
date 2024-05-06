@@ -30,6 +30,11 @@ class _HomeState extends State<Home> {
     );
   }
 
+  void clearChat() {
+    chatBloc.add(ClearChatEvent());
+    FocusScope.of(context).requestFocus(FocusNode());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,9 +44,27 @@ class _HomeState extends State<Home> {
         title: Image.asset('assets/gemini_logo.png', width: 100),
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=>const Setting())),
-            icon: const Icon(Icons.settings),
+          PopupMenuButton(
+
+            position: PopupMenuPosition.under,
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                  onTap: clearChat,
+                  child: const ListTile(
+                    leading: Icon(Icons.delete_forever_rounded),
+                    title: Text('Clear Conversation'),
+                  ),
+                ),
+                PopupMenuItem(
+                  onTap:()=> Navigator.push(context, MaterialPageRoute(builder: (context)=>const Setting())),
+                  child: const ListTile(
+                    leading: Icon(Icons.settings),
+                    title: Text('Settings'),
+                  ),
+                ),
+              ];
+            },
           ),
         ],
       ),
@@ -66,8 +89,7 @@ class _HomeState extends State<Home> {
                           controller: scrollController,
                           shrinkWrap: true,
                           physics: const ClampingScrollPhysics(),
-                          // itemCount: messages.length,
-                          itemCount: messages.length + (chatBloc.generating ? 1 : 0), // Add 1 for Shimmer if generating
+                          itemCount: messages.length + (chatBloc.generating ? 1 : 0),
                           separatorBuilder: (context,index) => const SizedBox(height: 8),
                           itemBuilder: (context,index){
                             if (index < messages.length) {
@@ -84,7 +106,7 @@ class _HomeState extends State<Home> {
                                     ? Column(
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
-                                          const Text('ME',style: TextStyle(fontWeight: FontWeight.w600)),
+                                          const Text('ME',style: TextStyle(fontWeight: FontWeight.w600,fontSize: 16)),
                                           Text(msg.parts.first.text, style: const TextStyle(fontSize: 16)),
                                         ],
                                       )
@@ -92,18 +114,26 @@ class _HomeState extends State<Home> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Image.asset('assets/gemini_icon.png',width: 40,),
+                                        const SizedBox(height: 8),
                                         MarkdownBody(data: msg.parts.first.text,
                                           selectable: true,
                                           styleSheet: MarkdownStyleSheet(
-                                            h1: const TextStyle(fontWeight: FontWeight.w600,fontSize: 28),
+                                            h1: const TextStyle(fontWeight: FontWeight.w700,fontSize: 28),
+                                            h2: const TextStyle(fontWeight: FontWeight.w700,fontSize: 24),
+                                            h3: const TextStyle(fontWeight: FontWeight.w700,fontSize: 20),
+                                            p: const TextStyle(fontSize: 16),
+                                            listIndent: 12,
                                             code: GoogleFonts.ptMono(
                                               textStyle : TextStyle(
-                                                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                                                fontSize: 14,
+                                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                                backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                                               ),
                                             ),
+
                                             codeblockDecoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(8),
-                                              color: Theme.of(context).colorScheme.surfaceVariant,
+                                              color: Theme.of(context).colorScheme.secondaryContainer,
                                             ),
                                           ),
                                         ),
@@ -147,9 +177,10 @@ class _HomeState extends State<Home> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('Start Conversation with ',
-                        style: TextStyle(fontSize: 22, height:1),),
-                      Image.asset('assets/gemini_logo.png', height: 28,),
+                        const Text('Start Conversation with ',
+                          style: TextStyle(fontSize: 22, height: 1),
+                        ),
+                        Image.asset('assets/gemini_logo.png', height: 28,),
                     ],
                   ),
                 ),

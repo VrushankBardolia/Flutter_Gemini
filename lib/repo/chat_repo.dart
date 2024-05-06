@@ -12,7 +12,7 @@ class ChatRepo{
         data: {
           "contents": previousMessages.map((e) => e.toMap()).toList(),
           "generationConfig": {
-            "temperature": 0.9,
+            "temperature": temperature,
             "topK": 1,
             "topP": 1,
             "maxOutputTokens": 2048,

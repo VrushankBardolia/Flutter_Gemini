@@ -8,3 +8,5 @@ class GenerateNewTextMessageEvent extends ChatEvent{
 
   GenerateNewTextMessageEvent({required this.inputMessage});
 }
+
+class ClearChatEvent extends ChatEvent{}

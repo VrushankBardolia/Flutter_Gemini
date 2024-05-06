@@ -12,6 +12,7 @@ part 'chat_state.dart';
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc() : super(ChatSuccessState(messages: const [])) {
     on<GenerateNewTextMessageEvent>(_generateNewTextMessageEvent);
+    on<ClearChatEvent>(_clearChatEvent);
   }
 
   List<ChatMessageModel> messages = [];
@@ -33,5 +34,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
     emit(ChatSuccessState(messages: messages));
     generating = false;
+  }
+
+  void _clearChatEvent(ClearChatEvent event, Emitter<ChatState> emit){
+    messages = [];
+    emit(ChatSuccessState(messages: messages));
   }
 }
