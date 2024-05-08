@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,6 +24,27 @@ class _HomeState extends State<Home> {
   final ChatBloc chatBloc = ChatBloc();
   final msgController = TextEditingController();
   final scrollController = ScrollController();
+  late ConnectivityResult connectionStatus;
+  bool bottomBarVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    checkInternetConnection();
+  }
+
+  Future<void> checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    print(connectivityResult);
+    setState(() {
+      connectionStatus = connectivityResult.first;
+      if(connectionStatus == ConnectivityResult.mobile || connectionStatus == ConnectivityResult.wifi){
+        bottomBarVisible = true;
+      } else {
+        bottomBarVisible = false;
+      }
+    });
+  }
 
   void scrollToBottom() {
     scrollController.animateTo(
@@ -35,20 +59,85 @@ class _HomeState extends State<Home> {
     FocusScope.of(context).requestFocus(FocusNode());
   }
 
+  Widget fieldAndButton(){
+    return Padding(
+      padding: MediaQuery.of(context).viewInsets,
+      child: BottomAppBar(
+        padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 0),
+        elevation: 0,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: msgController,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'Ask Gemini',
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.primaryContainer,
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 1,
+              ),
+            ),
+            const SizedBox(width: 12),
+            FloatingActionButton(
+              onPressed: () {
+                if(msgController.text.isNotEmpty){
+                  chatBloc.add(GenerateNewTextMessageEvent(inputMessage: msgController.text));
+                  msgController.clear();
+                  FocusScope.of(context).unfocus();
+                }
+                scrollToBottom();
+              },
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              elevation: 0,
+              focusElevation: 0,
+              child: Icon(
+                CupertinoIcons.arrow_turn_up_right,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget noConnection(){
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 12),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.errorContainer),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('No Internet Connection'),
+          IconButton(onPressed: checkInternetConnection, icon: const Icon(Icons.replay))
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
 
-      /// Appbar
-      appBar: AppBar(
-        title: Image.asset('assets/gemini_logo.png', width: 100),
-        scrolledUnderElevation: 0,
-        actions: [
-          PopupMenuButton(
-
-            position: PopupMenuPosition.under,
-            itemBuilder: (context) {
-              return [
+        /// Appbar
+        appBar: AppBar(
+          title: Image.asset('assets/gemini_logo.png', width: 100),
+          scrolledUnderElevation: 0,
+          actions: [
+            PopupMenuButton(
+              position: PopupMenuPosition.under,
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   onTap: clearChat,
                   child: const ListTile(
@@ -63,8 +152,7 @@ class _HomeState extends State<Home> {
                     title: Text('Settings'),
                   ),
                 ),
-              ];
-            },
+              ]
           ),
         ],
       ),
@@ -189,56 +277,9 @@ class _HomeState extends State<Home> {
       ),
 
       /// Bottom TextField and button
-      bottomNavigationBar: Padding(
-        padding: MediaQuery.of(context).viewInsets,
-        child: BottomAppBar(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 0),
-          elevation: 0,
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: msgController,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: 'Ask Gemini',
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                  maxLines: 1,
-                ),
-              ),
-              const SizedBox(width: 12),
-              FloatingActionButton(
-                onPressed: () {
-                  if(msgController.text.isNotEmpty){
-                    chatBloc.add(GenerateNewTextMessageEvent(inputMessage: msgController.text));
-                    msgController.clear();
-                    FocusScope.of(context).unfocus();
-                  }
-                  scrollToBottom();
-                },
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                elevation: 0,
-                focusElevation: 0,
-                child: Icon(
-                  CupertinoIcons.arrow_turn_up_right,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      bottomNavigationBar: bottomBarVisible
+          ? fieldAndButton()
+          : noConnection()
     );
   }
 }
